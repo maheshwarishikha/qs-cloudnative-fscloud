@@ -16,11 +16,11 @@ provider "null" {
 }
 
 resource "ibm_is_vpc" "vpc1" {
-  name = "bank_vpc1"
+  name = "bank-vpc1"
 }
 
 resource "ibm_is_subnet" "subnet1" {
-  name                     = "bank_subnet1"
+  name                     = "bank-subnet1"
   vpc                      = ibm_is_vpc.vpc1.id
   zone                     = var.datacenter
   total_ipv4_address_count = 256
