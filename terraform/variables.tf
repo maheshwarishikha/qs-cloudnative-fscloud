@@ -61,7 +61,7 @@ variable "ibmcloud_api_key" {
 variable "toolchain_template_repo" {
   type        = string
   description = "URL for the Toolchain Template"
-  default     = "https://github.com/IBM/example-bank-toolchain"
+  default     = "https://github.com/open-toolchain/secure-kube-toolchain"
 }
 
 variable "application_repo" {
