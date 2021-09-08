@@ -205,6 +205,7 @@ secret=$(echo "${response}"| head -n1 | jq -j '.applications[0].secret')
 oauthserverurl=$(echo "${response}"| head -n1 | jq -j '.applications[0].oAuthServerUrl')
 appidhost=$(echo "${oauthserverurl}" | awk -F/ '{print $3}')
 
+# this may not work
 oc create secret generic bank-oidc-secret --from-literal=OIDC_JWKENDPOINTURL=$oauthserverurl/publickeys --from-literal=OIDC_ISSUERIDENTIFIER=$oauthserverurl --from-literal=OIDC_AUDIENCES=$clientid
 
 oc create secret generic bank-appid-secret --from-literal=APPID_TENANTID=$tenantid --from-literal=APPID_SERVICE_URL=https://$appidhost
