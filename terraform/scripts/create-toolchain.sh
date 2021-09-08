@@ -22,8 +22,18 @@ RESOURCE_GROUP_ID=$(ibmcloud resource group $RESOURCE_GROUP --output JSON | jq "
 # Excerpt from example-bank-toolchain script (https://github.com/IBM/example-bank-toolchain/blob/main/scripts/createappid.sh)
 ibmcloud resource service-instance appid-example-bank
 if [ "$?" -ne "0" ]; then
-  ibmcloud resource service-instance-create appid-example-bank appid lite us-south
+  echo "Creating the 'appid-example-bank' service..."
+  ibmcloud resource service-instance-create appid-example-bank appid graduated-tier us-south
+else
+  echo "The 'appid-example-bank' service already exists"
+fi
+
+ibmcloud resource service-key appid-example-bank-credentials
+if [ "$?" -ne "0" ]; then
+  echo "Creating the 'appid-example-bank-credentials' service key..."
   ibmcloud resource service-key-create appid-example-bank-credentials Writer --instance-name appid-example-bank
+else
+  echo "The 'appid-example-bank-credentials' service key already exists"
 fi
 
 credentials=$(ibmcloud resource service-key appid-example-bank-credentials)
