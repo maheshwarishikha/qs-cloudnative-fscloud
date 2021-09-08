@@ -16,13 +16,13 @@ provider "null" {
 }
 
 resource "ibm_is_vpc" "vpc1" {
-  name = "bank_vpc1"
+  name = "bank-vpc1"
 }
 
 resource "ibm_is_subnet" "subnet1" {
-  name                     = "bank_subnet1"
+  name                     = "bank-subnet1"
   vpc                      = ibm_is_vpc.vpc1.id
-  zone                     = "us_south-1"
+  zone                     = var.datacenter
   total_ipv4_address_count = 256
 }
 
@@ -39,7 +39,7 @@ resource "ibm_container_vpc_cluster" "cluster" {
   resource_group_id = data.ibm_resource_group.resource_group.id
   zones {
       subnet_id = ibm_is_subnet.subnet1.id
-      name      = "us-south-1"
+      name      = var.datacenter
     }
 }
 
@@ -52,9 +52,9 @@ resource "null_resource" "create_kubernetes_toolchain" {
     command = "${path.cwd}/scripts/create-toolchain.sh"
 
     environment = {
-      REGION                  =  var.region
-      TOOLCHAIN_TEMPLATE_REPO = var.toolchain_template_repo
-      APPLICATION_REPO        = var.application_repo
+      REGION                  = var.region
+      TOOLCHAIN_TEMPLATE_REPO = "https://github.com/open-toolchain/secure-kube-toolchain"
+      APPLICATION_REPO        = "https://github.com/IBM/example-bank"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
       CLUSTER_NAME            = var.cluster_name
