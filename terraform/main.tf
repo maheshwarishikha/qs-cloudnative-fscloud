@@ -38,6 +38,7 @@ resource "ibm_resource_instance" "cos_instance" {
 }
 
 resource "ibm_container_vpc_cluster" "cluster" {
+  count             = var.cluster_name == "bank_vpc_cluster" ? 1 : 0
   name              = var.cluster_name
   vpc_id            = ibm_is_vpc.vpc1.id
   kube_version      = var.kube_version
@@ -60,6 +61,7 @@ resource "null_resource" "create_kubernetes_toolchain" {
     command = "${path.cwd}/scripts/create-toolchain.sh"
 
     environment = {
+      MOBILE_SIM              = "mobile-simulator-${formatdate("YYYYMMDDhhmm", timestamp())}"
       REGION                  = var.region
       TOOLCHAIN_TEMPLATE_REPO = "https://github.com/open-toolchain/secure-kube-toolchain"
       APPLICATION_REPO        = "https://github.com/IBM/example-bank"
