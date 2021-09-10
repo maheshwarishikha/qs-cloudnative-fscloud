@@ -30,12 +30,20 @@ data "ibm_resource_group" "resource_group" {
   name = var.resource_group
 }
 
+resource "ibm_resource_instance" "cos_instance" {
+  name     = "bank-cos-instance"
+  service  = "cloud-object-storage"
+  plan     = "standard"
+  location = "global"
+}
+
 resource "ibm_container_vpc_cluster" "cluster" {
   name              = var.cluster_name
   vpc_id            = ibm_is_vpc.vpc1.id
   kube_version      = var.kube_version
   flavor            = var.machine_type
   worker_count      = var.default_pool_size
+  cos_instance_crn  = ibm_resource_instance.cos_instance.id
   resource_group_id = data.ibm_resource_group.resource_group.id
   zones {
       subnet_id = ibm_is_subnet.subnet1.id
