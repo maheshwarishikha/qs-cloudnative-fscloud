@@ -16,7 +16,7 @@ provider "null" {
 }
 
 resource "ibm_is_vpc" "vpc1" {
-  name = "bank-vpc1"
+  name    = "bank-vpc1"
 }
 
 resource "ibm_is_subnet" "subnet1" {
@@ -26,15 +26,15 @@ resource "ibm_is_subnet" "subnet1" {
   total_ipv4_address_count = 256
 }
 
-data "ibm_resource_group" "resource_group" {
-  name = var.resource_group
-}
-
 resource "ibm_resource_instance" "cos_instance" {
   name     = "bank-cos-instance"
   service  = "cloud-object-storage"
   plan     = "standard"
   location = "global"
+}
+
+data "ibm_resource_group" "resource_group" {
+  name = var.resource_group
 }
 
 resource "ibm_container_vpc_cluster" "cluster" {
@@ -52,10 +52,6 @@ resource "ibm_container_vpc_cluster" "cluster" {
     }
 }
 
-data "ibm_resource_group" "group" {
-  name = var.resource_group
-}
-
 resource "null_resource" "create_kubernetes_toolchain" {
   provisioner "local-exec" {
     command = "${path.cwd}/scripts/create-toolchain.sh"
@@ -70,7 +66,7 @@ resource "null_resource" "create_kubernetes_toolchain" {
       CLUSTER_NAME            = var.cluster_name
       CLUSTER_NAMESPACE       = var.cluster_namespace
       CONTAINER_REGISTRY_NAMESPACE = var.registry_namespace
-      TOOLCHAIN_NAME          = var.toolchain_name
+      TOOLCHAIN_NAME          = "example-bank-toolchain"
       PIPELINE_TYPE           = "tekton"
       BRANCH                  = var.branch
     }

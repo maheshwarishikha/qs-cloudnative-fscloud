@@ -1,9 +1,3 @@
-variable "toolchain_name" {
-  type        = string
-  description = "Name of the Compliance CI toolchain."
-  default     = "example-bank-toolchain"
-}
-
 variable "region" {
   type        = string
   description = "IBM Cloud region where your application will be deployed (to view your current targeted region `ibmcloud cr region`)"
