@@ -315,13 +315,13 @@ PARAMETERS="region_id=$TOOLCHAIN_REGION&resourceGroupId=$RESOURCE_GROUP_ID&autoc
 `"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&prodRegion=$TOOLCHAIN_REGION"`
 `"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&toolchainName=$TOOLCHAIN_NAME&branch=$BRANCH&pipeline_type=$PIPELINE_TYPE"
-echo $PARAMETERS
+#echo $PARAMETERS
 
 RESPONSE=$(curl -i -X POST \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'Accept: application/json' \
   -H "Authorization: $BEARER_TOKEN" \
-  -d "$PARAMETERS"
+  -d "$PARAMETERS" \
   "https://cloud.ibm.com/devops/setup/deploy?env_id=$TOOLCHAIN_REGION")
 
 echo "$RESPONSE"
