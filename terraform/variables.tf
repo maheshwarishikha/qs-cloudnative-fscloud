@@ -15,18 +15,6 @@ variable "resource_group" {
   default     = "default"
 }
 
-variable "cluster_name" {
-  type        = string
-  description = "Name of the Kubernetes cluster where your application is deployed. If you use the default value, a new cluster is provisioned. If you override the default value with a different cluster name, that cluster must already exist."
-  default     = "bank_vpc_cluster"
-}
-
-variable "cluster_namespace" {
-  type        = string
-  description = "Kubernetes namespace to deploy into. NOTE: If the namespace does not exist, it will be created."
-  default     = "default"
-}
-
 variable "default_pool_size" {
   type        = string
   description = "Number of worker nodes for the new Kubernetes cluster"
@@ -49,12 +37,6 @@ variable "kube_version" {
   type        = string
   description = "Version of Kubernetes to apply to the new Kubernetes cluster (Run: `ibmcloud ks versions` to see available versions)"
   default     = "4.6.42_openshift"
-}
-
-variable "branch" {
-  type        = string
-  description = "Branch for Compliance CI toolchain template repo"
-  default     = "master"
 }
 
 variable "ibmcloud_api_key" {

@@ -16,18 +16,25 @@ provider "null" {
 }
 
 resource "ibm_is_vpc" "vpc1" {
-  name    = "bank-vpc1"
+  name  = "bank-vpc-${formatdate("YYYYMMDDhhmm", timestamp())}"
+}
+
+resource "ibm_is_public_gateway" "vpc_gateway" {
+  name = "vpc-gateway-${formatdate("YYYYMMDDhhmm", timestamp())}"
+  vpc  = ibm_is_vpc.vpc1.id
+  zone = var.datacenter
 }
 
 resource "ibm_is_subnet" "subnet1" {
-  name                     = "bank-subnet1"
+  name                     = "bank-subnet-${formatdate("YYYYMMDDhhmm", timestamp())}"
   vpc                      = ibm_is_vpc.vpc1.id
   zone                     = var.datacenter
   total_ipv4_address_count = 256
+  public_gateway           = ibm_is_public_gateway.vpc_gateway.id
 }
 
 resource "ibm_resource_instance" "cos_instance" {
-  name     = "bank-cos-instance"
+  name     = "bank-cos-instance-${formatdate("YYYYMMDDhhmm", timestamp())}"
   service  = "cloud-object-storage"
   plan     = "standard"
   location = "global"
@@ -38,8 +45,7 @@ data "ibm_resource_group" "resource_group" {
 }
 
 resource "ibm_container_vpc_cluster" "cluster" {
-  count             = var.cluster_name == "bank_vpc_cluster" ? 1 : 0
-  name              = var.cluster_name
+  name              = "bank_vpc_cluster-${formatdate("YYYYMMDDhhmm", timestamp())}"
   vpc_id            = ibm_is_vpc.vpc1.id
   kube_version      = var.kube_version
   flavor            = var.machine_type
@@ -53,22 +59,22 @@ resource "ibm_container_vpc_cluster" "cluster" {
 }
 
 resource "null_resource" "create_kubernetes_toolchain" {
+  depends_on = [ibm_container_vpc_cluster.cluster]
   provisioner "local-exec" {
     command = "${path.cwd}/scripts/create-toolchain.sh"
-
     environment = {
       MOBILE_SIM              = "mobile-simulator-${formatdate("YYYYMMDDhhmm", timestamp())}"
       REGION                  = var.region
-      TOOLCHAIN_TEMPLATE_REPO = "https://github.com/open-toolchain/secure-kube-toolchain"
+      TOOLCHAIN_TEMPLATE_REPO = "https://github.com/open-toolchain/simple-helm-toolchain"
       APPLICATION_REPO        = "https://github.com/IBM/example-bank"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
-      CLUSTER_NAME            = var.cluster_name
-      CLUSTER_NAMESPACE       = var.cluster_namespace
+      CLUSTER_NAME            = ibm_container_vpc_cluster.cluster.name
+      CLUSTER_NAMESPACE       = "example-bank"
       CONTAINER_REGISTRY_NAMESPACE = var.registry_namespace
-      TOOLCHAIN_NAME          = "example-bank-toolchain"
+      TOOLCHAIN_NAME          = "example-bank-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
       PIPELINE_TYPE           = "tekton"
-      BRANCH                  = var.branch
+      BRANCH                  = "main"
     }
   }
 }

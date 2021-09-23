@@ -14,6 +14,7 @@ BEARER_TOKEN=$(ibmcloud iam oauth-tokens | grep "$IAM_TOKEN" | sed -e "s/^$IAM_T
 TOOLCHAIN_REGION=$REGION
 if [[ ! $TOOLCHAIN_REGION =~ "ibm:" ]]; then
   export TOOLCHAIN_REGION="ibm:yp:$REGION"
+  export TOOLCHAIN_TEMPLATE_REPO="https://$REGION.git.cloud.ibm.com/open-toolchain/simple-helm-toolchain"
 fi
 
 RESOURCE_GROUP_ID=$(ibmcloud resource group $RESOURCE_GROUP --output JSON | jq ".[].id" -r)
@@ -215,6 +216,8 @@ oc version
 ibmcloud plugin update --all
 ibmcloud oc cluster config -c $CLUSTER_NAME --admin
 sleep 10  # Waiting 10 seconds for configuration to be established
+echo "Creating new project 'example-bank'..."
+oc new-project example-bank
 
 # Create OC secrets
 echo "Creating secrets..."
@@ -232,20 +235,94 @@ oc create secret generic mobile-simulator-secrets \
 oc create secret generic bank-oidc-adminuser --from-literal=APP_ID_ADMIN_USER=bankadmin --from-literal=APP_ID_ADMIN_PASSWORD=password
 oc create secret generic bank-db-secret --from-literal=DB_SERVERNAME=creditdb --from-literal=DB_PORTNUMBER=5432 --from-literal=DB_DATABASENAME=example --from-literal=DB_USER=postgres --from-literal=DB_PASSWORD=postgres
 
+# create the operator group
+echo "Creating the OperatorGroup 'bank-postgresql'..."
+oc apply -f scripts/operatorgroup.yaml
+
+# create the subscription
+echo "Creating the Subscription 'bank-subscription'..."
+oc apply -f scripts/sub.yaml
+
+echo "Waiting for PostgreSQL Operator to be created..."
+sleep 30
+WAIT=240
+COUNTER=0
+while [ $COUNTER -lt $WAIT ]; do
+  OG_STATUS=$(oc get pods | grep postgresql-operator | awk {'print $3'})
+  if [[ $OG_STATUS == "Running" ]];then
+    echo "OG Status: $OG_STATUS"
+    break
+  else
+    COUNTER=$((COUNTER+30))
+    echo "OG Status: $OG_STATUS"
+    if [[ $COUNTER == $WAIT ]];then
+      echo "Operator took longer than 4 minutes to create. This could be a problem."
+      break
+    fi
+    echo "Trying again in 30 seconds..."
+    sleep 30
+  fi
+done
+
+# create the database
+echo "Creating the PostgreSQL database 'creditdb'..."
+oc apply -f scripts/db.yaml
+
+echo "Waiting for PostgreSQL database to be created..."
+sleep 30
+WAIT=300
+COUNTER=0
+while [ $COUNTER -lt $WAIT ]; do
+  DB_STATUS=$(oc get pods | grep creditdb | awk {'print $3'})
+  if [[ $DB_STATUS == "Running" ]];then
+    echo "DB Status: $DB_STATUS"
+    break
+  else
+    COUNTER=$((COUNTER+30))
+    echo "DB Status: $DB_STATUS"
+    if [[ $COUNTER == $WAIT ]];then
+      echo "DB took longer than 4 minutes to create. This could be a problem."
+      break
+    fi
+    echo "Trying again in 30 seconds..."
+    sleep 30
+  fi
+done
+
+# connect to database
+echo "Connecting to the 'creditdb' database..."
+oc expose deploy creditdb --port=5432 --target-port=5432 --type=LoadBalancer --name my-pg-svc
+oc get svc
+oc get secrets
+
+# create job
+echo "Creating the job 'cc-schema-load'..."
+oc apply -f scripts/job.yaml
+echo "Waiting 60 seconds for job to complete..."
+sleep 60
+oc get jobs
+oc get pods
+
+# URL encode TOOLCHAIN_REGION, TOOLCHAIN_TEMPLATE_REPO, APPLICATION_REPO, and API_KEY
+export TOOLCHAIN_TEMPLATE_REPO=$(echo "$TOOLCHAIN_TEMPLATE_REPO" | jq -Rr @uri)
+export APPLICATION_REPO=$(echo "$APPLICATION_REPO" | jq -Rr @uri)
+export API_KEY=$(echo "$API_KEY" | jq -Rr @uri)
+
 # create the toolchain
 echo "Creating the toolchain..."
 PARAMETERS="region_id=$TOOLCHAIN_REGION&resourceGroupId=$RESOURCE_GROUP_ID&autocreate=true"`
 `"&repository=$TOOLCHAIN_TEMPLATE_REPO&sourceZipUrl=$APPLICATION_REPO&app_repo=$APPLICATION_REPO&apiKey=$API_KEY"`
-`"&registryRegion=$REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&prodRegion=$REGION"`
-`"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodClusterNamespace=$CONTAINER_REGISTRY_NAMESPACE"`
+`"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&prodRegion=$TOOLCHAIN_REGION"`
+`"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&toolchainName=$TOOLCHAIN_NAME&branch=$BRANCH&pipeline_type=$PIPELINE_TYPE"
-#echo $PARAMETERS
+echo $PARAMETERS
 
 RESPONSE=$(curl -i -X POST \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'Accept: application/json' \
   -H "Authorization: $BEARER_TOKEN" \
-  "https://cloud.ibm.com/devops/setup/deploy?env_id=$TOOLCHAIN_REGION&$PARAMETERS")
+  -d "$PARAMETERS"
+  "https://cloud.ibm.com/devops/setup/deploy?env_id=$TOOLCHAIN_REGION")
 
 echo "$RESPONSE"
 LOCATION=$(grep location <<<"$RESPONSE" | awk {'print $2'})
