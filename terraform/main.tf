@@ -66,7 +66,7 @@ resource "null_resource" "create_kubernetes_toolchain" {
       MOBILE_SIM              = "mobile-simulator-${formatdate("YYYYMMDDhhmm", timestamp())}"
       REGION                  = var.region
       TOOLCHAIN_TEMPLATE_REPO = "https://github.com/open-toolchain/simple-helm-toolchain"
-      APPLICATION_REPO        = "https://github.com/IBM/example-bank"
+      APPLICATION_REPO        = "https://github.com/IBM/example-bank-toolchain"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
       CLUSTER_NAME            = ibm_container_vpc_cluster.cluster.name
