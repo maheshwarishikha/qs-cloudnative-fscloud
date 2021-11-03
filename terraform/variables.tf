@@ -6,7 +6,8 @@ variable "region" {
 
 variable "registry_namespace" {
   type        = string
-  description = "Container registry namespace to save images (`ibmcloud cr namespaces`). NOTE: The namespace must already exist, or be a unique value."
+  description = "Container registry namespace to save images (`ibmcloud cr namespaces`). NOTE: If you do not override this value with a namespace that already exists, a new namespace will be created."
+  default     = "examplebank<timestamp>"
 }
 
 variable "resource_group" {
