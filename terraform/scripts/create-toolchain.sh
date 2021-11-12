@@ -399,20 +399,18 @@ export TOOLCHAIN_REGION="ibm:yp:$REGION"
 # URL encode TOOLCHAIN_REGION, TOOLCHAIN_TEMPLATE_REPO, APPLICATION_REPO, and API_KEY
 export TOOLCHAIN_TEMPLATE_REPO=$(echo "$TOOLCHAIN_TEMPLATE_REPO" | jq -Rr @uri)
 export APPLICATION_REPO=$(echo "$APPLICATION_REPO" | jq -Rr @uri)
-export API_KEY=$(echo "$API_KEY" | jq -Rr @uri)
 export appName=$APP_NAME
-export COS_API_KEY=$(echo "$COS_API_KEY" | jq -Rr @uri)
 
 # create the toolchain
 echo "Creating the toolchain..."
-PARAMETERS="autocreate=true&appName=$APP_NAME&apiKey=$API_KEY"`
+PARAMETERS="autocreate=true&appName=$APP_NAME&apiKey={vault::$SM_NAME.Default.API_Key}"`
 `"&repository=$TOOLCHAIN_TEMPLATE_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
 `"&sourceRepoUrl=$APPLICATION_REPO&resourceGroupId=$RESOURCE_GROUP_ID"`
 `"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&devRegion=$REGION"`
 `"&devResourceGroup=$RESOURCE_GROUP&devClusterName=$CLUSTER_NAME&devClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodRegion=$REGION&prodClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&toolchainName=$TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
-`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey=$COS_API_KEY"`
+`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
 `"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME"
 echo $PARAMETERS
 
@@ -420,7 +418,6 @@ RESPONSE=$(curl -i -X POST \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'Accept: application/json' \
   -H "Authorization: $BEARER_TOKEN" \
-  --data-binary vaultSecret@privatekey.txt \
   -d "$PARAMETERS" \
   "https://cloud.ibm.com/devops/setup/deploy?env_id=$TOOLCHAIN_REGION")
 
