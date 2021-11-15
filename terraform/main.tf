@@ -92,7 +92,8 @@ resource "null_resource" "create_kubernetes_toolchain" {
     environment = {
       MOBILE_SIM              = "mobile-simulator-${formatdate("YYYYMMDDhhmm", timestamp())}"
       REGION                  = var.region
-      TOOLCHAIN_TEMPLATE_REPO = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-ci-toolchain"
+      CI_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-ci-toolchain"
+      CD_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-cd-toolchain"
       APPLICATION_REPO        = "https://github.com/ChuckCox/example-bank-toolchain"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
