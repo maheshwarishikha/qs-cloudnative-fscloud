@@ -396,20 +396,21 @@ for i in ${!SECRETS_NAMES[@]}; do
 done
 
 export TOOLCHAIN_REGION="ibm:yp:$REGION"
-# URL encode TOOLCHAIN_REGION, TOOLCHAIN_TEMPLATE_REPO, APPLICATION_REPO, and API_KEY
-export TOOLCHAIN_TEMPLATE_REPO=$(echo "$TOOLCHAIN_TEMPLATE_REPO" | jq -Rr @uri)
+# URL encode CI_TOOLCHAIN_REPO, CD_TOOLCHAIN_REPO, and APPLICATION_REPO
+export CI_TOOLCHAIN_REPO=$(echo "$CI_TOOLCHAIN_REPO" | jq -Rr @uri)
+export CD_TOOLCHAIN_REPO=$(echo "$CD_TOOLCHAIN_REPO" | jq -Rr @uri)
 export APPLICATION_REPO=$(echo "$APPLICATION_REPO" | jq -Rr @uri)
 export appName=$APP_NAME
 
-# create the toolchain
-echo "Creating the toolchain..."
+# create the ci toolchain
+echo "Creating the CI Toolchain..."
 PARAMETERS="autocreate=true&appName=$APP_NAME&apiKey={vault::$SM_NAME.Default.API_Key}"`
-`"&repository=$TOOLCHAIN_TEMPLATE_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
+`"&repository=$CI_TOOLCHAIN_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
 `"&sourceRepoUrl=$APPLICATION_REPO&resourceGroupId=$RESOURCE_GROUP_ID"`
 `"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&devRegion=$REGION"`
 `"&devResourceGroup=$RESOURCE_GROUP&devClusterName=$CLUSTER_NAME&devClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodRegion=$REGION&prodClusterNamespace=$CLUSTER_NAMESPACE"`
-`"&toolchainName=$TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
+`"&toolchainName=$CI_TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
 `"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
 `"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME"
 echo $PARAMETERS
@@ -423,6 +424,68 @@ RESPONSE=$(curl -i -X POST \
 
 echo "$RESPONSE"
 LOCATION=$(grep location <<<"$RESPONSE" | awk {'print $2'})
-echo "View the toolchain at: $LOCATION"
+echo "View the CI toolchain at: $LOCATION"
+
+# get data from newly created ci toolchain
+# URL might need "?include=services,unconfigured" added to the end
+# "${LOCATION}?include=services,unconfigured" instead of "$LOCATION"
+TOOLCHAIN_ID=$(echo "$LOCATION" | cut -d '/' -f 6 | cut -d '?' -f 1)
+echo "Waiting 10 seconds for services within the CI Toolchain to be configured..."
+sleep 10
+echo "Gathering data from the CI Toolchain..."
+RESPONSE=$(curl -s \
+  -H 'Accept: application/json' \
+  -H "Authorization: $BEARER_TOKEN" \
+  "${LOCATION%$'\r'}?include=services,unconfigured")
+
+# parse the json to obtain the evidence, inventory, and issues repo URLs
+SERVICES=$(echo $RESPONSE | jq -r '.services | length')
+count=0
+while [[ $count -lt $SERVICES ]]; do
+	service=$(echo $RESPONSE | jq -r --argjson count $count '.services[$count] .service_id')
+	if [[ "$service" == "hostedgit" ]]; then
+		if [[ $(echo $RESPONSE | jq --argjson count $count '.services[$count] .parameters.repo_url') == *'inventory'* ]]; then
+			INV_URL=$(echo $RESPONSE | jq -r --argjson count $count '.services[$count] .parameters.repo_url')
+		elif [[ $(echo $RESPONSE | jq --argjson count $count '.services[$count] .parameters.repo_url') == *'evidence'* ]]; then
+			EVI_URL=$(echo $RESPONSE | jq -r --argjson count $count '.services[$count] .parameters.repo_url')
+		elif [[ $(echo $RESPONSE | jq --argjson count $count '.services[$count] .parameters.repo_url') == *'issues'* ]]; then
+			ISS_URL=$(echo $RESPONSE | jq -r --argjson count $count '.services[$count] .parameters.repo_url')
+		fi
+	fi
+	((count++))
+done
+
+echo "Inventory URL: ${INV_URL%.*}"
+echo "Evidence URL: ${EVI_URL%.*}"
+echo "Issues URL: ${ISS_URL%.*}"
+
+# url encode a few values
+export ISSUES_REPO=$(echo "${ISS_URL%.*}" | jq -Rr @uri)
+export EVIDENCE_REPO=$(echo "${EVI_URL%.*}" | jq -Rr @uri)
+export INVENTORY_REPO=$(echo "${INV_URL%.*}" | jq -Rr @uri)
+
+# create the cd toolchain
+echo "Creating the CD Toolchain..."
+PARAMETERS="autocreate=true&appName=$APP_NAME&ibmCloudApiKey={vault::$SM_NAME.Default.API_Key}"`
+`"&repository=$CD_TOOLCHAIN_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
+`"&pipelineConfig=$APPLICATION_REPO&resourceGroupId=$RESOURCE_GROUP_ID"`
+`"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&clusterRegion=$REGION"`
+`"&clusterResourceGroup=$RESOURCE_GROUP&clusterName=$CLUSTER_NAME&clusterNamespace=$CLUSTER_NAMESPACE"`
+`"&toolchainName=$CD_TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
+`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
+`"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME&doiToolchainId=$TOOLCHAIN_ID"`
+`"&incidentIssuesRepo=$ISSUES_REPO&evidenceLockerRepo=$EVIDENCE_REPO&inventoryRepo=$INVENTORY_REPO"
+echo $PARAMETERS
+
+RESPONSE=$(curl -i -X POST \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'Accept: application/json' \
+  -H "Authorization: $BEARER_TOKEN" \
+  -d "$PARAMETERS" \
+  "https://cloud.ibm.com/devops/setup/deploy?env_id=$TOOLCHAIN_REGION")
+
+echo "$RESPONSE"
+LOCATION=$(grep location <<<"$RESPONSE" | awk {'print $2'})
+echo "View the CD toolchain at: $LOCATION"
 
 exit 0;

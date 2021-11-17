@@ -92,14 +92,16 @@ resource "null_resource" "create_kubernetes_toolchain" {
     environment = {
       MOBILE_SIM              = "mobile-simulator-${formatdate("YYYYMMDDhhmm", timestamp())}"
       REGION                  = var.region
-      TOOLCHAIN_TEMPLATE_REPO = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-ci-toolchain"
+      CI_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-ci-toolchain"
+      CD_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-cd-toolchain"
       APPLICATION_REPO        = "https://github.com/ChuckCox/example-bank-toolchain"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
       CLUSTER_NAME            = ibm_container_vpc_cluster.cluster.name
       CLUSTER_NAMESPACE       = "example-bank"
       CONTAINER_REGISTRY_NAMESPACE = var.registry_namespace == "examplebank<timestamp>" ? "examplebank${formatdate("YYYYMMDDhhmm", timestamp())}" : var.registry_namespace
-      TOOLCHAIN_NAME          = "example-bank-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
+      CI_TOOLCHAIN_NAME       = "bank-ci-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
+      CD_TOOLCHAIN_NAME       = "bank-cd-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
       PIPELINE_TYPE           = "tekton"
       PIPELINE_CONFIG_BRANCH  = "main"
       BRANCH                  = "master"
