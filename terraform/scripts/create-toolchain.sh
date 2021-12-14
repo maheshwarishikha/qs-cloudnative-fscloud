@@ -404,14 +404,14 @@ export appName=$APP_NAME
 
 # create the ci toolchain
 echo "Creating the CI Toolchain..."
-PARAMETERS="autocreate=true&appName=$APP_NAME&apiKey={vault::$SM_NAME.Default.API_Key}"`
+PARAMETERS="autocreate=true&appName=$APP_NAME&apiKey={vault::$SM_NAME.Default.IAM_API_Key}"`
 `"&repository=$CI_TOOLCHAIN_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
 `"&sourceRepoUrl=$APPLICATION_REPO&resourceGroupId=$RESOURCE_GROUP_ID"`
 `"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&devRegion=$REGION"`
 `"&devResourceGroup=$RESOURCE_GROUP&devClusterName=$CLUSTER_NAME&devClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&prodResourceGroup=$RESOURCE_GROUP&prodClusterName=$CLUSTER_NAME&prodRegion=$REGION&prodClusterNamespace=$CLUSTER_NAMESPACE"`
 `"&toolchainName=$CI_TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
-`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
+`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_API_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
 `"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME"
 echo $PARAMETERS
 
@@ -472,16 +472,16 @@ export sccScope="bank-scc-scope"
 
 # create the cd toolchain
 echo "Creating the CD Toolchain..."
-PARAMETERS="autocreate=true&appName=$APP_NAME&ibmCloudApiKey={vault::$SM_NAME.Default.API_Key}"`
+PARAMETERS="autocreate=true&appName=$APP_NAME&ibmCloudApiKey={vault::$SM_NAME.Default.IAM_API_Key}"`
 `"&repository=$CD_TOOLCHAIN_REPO&repository_token=$GITLAB_TOKEN&branch=$BRANCH"`
 `"&pipelineConfig=$APPLICATION_REPO&resourceGroupId=$RESOURCE_GROUP_ID"`
 `"&registryRegion=$TOOLCHAIN_REGION&registryNamespace=$CONTAINER_REGISTRY_NAMESPACE&clusterRegion=$REGION"`
 `"&clusterResourceGroup=$RESOURCE_GROUP&clusterName=$CLUSTER_NAME&clusterNamespace=$CLUSTER_NAMESPACE"`
 `"&toolchainName=$CD_TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
-`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
+`"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_API_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
 `"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME&doiToolchainId=$TOOLCHAIN_ID"`
 `"&incidentIssuesRepo=$ISSUES_REPO&evidenceLockerRepo=$EVIDENCE_REPO&inventoryRepo=$INVENTORY_REPO"`
-`"&sccName=$sccName&triggerSccScan=$triggerSccScan&sccProfile=$sccProfile&sccScope=$sccScope&sccAPIKey={vault::$SM_NAME.Default.API_Key}"
+`"&sccName=$sccName&triggerSccScan=$triggerSccScan&sccProfile=$sccProfile&sccScope=$sccScope&sccAPIKey={vault::$SM_NAME.Default.IAM_API_Key}"
 echo $PARAMETERS
 
 RESPONSE=$(curl -i -X POST \
