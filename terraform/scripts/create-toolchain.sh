@@ -430,8 +430,8 @@ echo "View the CI toolchain at: $LOCATION"
 # URL might need "?include=services,unconfigured" added to the end
 # "${LOCATION}?include=services,unconfigured" instead of "$LOCATION"
 TOOLCHAIN_ID=$(echo "$LOCATION" | cut -d '/' -f 6 | cut -d '?' -f 1)
-echo "Waiting 10 seconds for services within the CI Toolchain to be configured..."
-sleep 10
+echo "Waiting 1 minute for services within the CI Toolchain to be configured..."
+sleep 60
 echo "Gathering data from the CI Toolchain..."
 RESPONSE=$(curl -s \
   -H 'Accept: application/json' \
@@ -464,6 +464,12 @@ export ISSUES_REPO=$(echo "${ISS_URL%.*}" | jq -Rr @uri)
 export EVIDENCE_REPO=$(echo "${EVI_URL%.*}" | jq -Rr @uri)
 export INVENTORY_REPO=$(echo "${INV_URL%.*}" | jq -Rr @uri)
 
+# scc values
+export sccName="bank-scc"
+export triggerSccScan="enabled"
+export sccProfile="bank-scc-profile"
+export sccScope="bank-scc-scope"
+
 # create the cd toolchain
 echo "Creating the CD Toolchain..."
 PARAMETERS="autocreate=true&appName=$APP_NAME&ibmCloudApiKey={vault::$SM_NAME.Default.API_Key}"`
@@ -474,7 +480,8 @@ PARAMETERS="autocreate=true&appName=$APP_NAME&ibmCloudApiKey={vault::$SM_NAME.De
 `"&toolchainName=$CD_TOOLCHAIN_NAME&pipeline_type=$PIPELINE_TYPE&pipelineConfigBranch=$PIPELINE_CONFIG_BRANCH&gitToken=$GITLAB_TOKEN"`
 `"&cosBucketName=$COS_BUCKET_NAME&cosEndpoint=$COS_URL&cosApiKey={vault::$SM_NAME.Default.COS_Key}&vaultSecret={vault::$SM_NAME.Default.GPG_Key}"`
 `"&smName=$SM_NAME&smRegion=$TOOLCHAIN_REGION&smResourceGroup=$RESOURCE_GROUP&smInstanceName=$SM_SERVICE_NAME&doiToolchainId=$TOOLCHAIN_ID"`
-`"&incidentIssuesRepo=$ISSUES_REPO&evidenceLockerRepo=$EVIDENCE_REPO&inventoryRepo=$INVENTORY_REPO"
+`"&incidentIssuesRepo=$ISSUES_REPO&evidenceLockerRepo=$EVIDENCE_REPO&inventoryRepo=$INVENTORY_REPO"`
+`"&sccName=$sccName&triggerSccScan=$triggerSccScan&sccProfile=$sccProfile&sccScope=$sccScope&sccAPIKey={vault::$SM_NAME.Default.API_Key}"
 echo $PARAMETERS
 
 RESPONSE=$(curl -i -X POST \
