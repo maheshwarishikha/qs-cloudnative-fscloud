@@ -36,8 +36,7 @@ variable "machine_type" {
 
 variable "kube_version" {
   type        = string
-  description = "Version of Kubernetes to apply to the new Kubernetes cluster (Run: `ibmcloud ks versions` to see available versions)"
-  default     = "4.8.14_openshift"
+  description = "Version of OpenShift to apply to the new Kubernetes cluster (Ex. '4.8.21_openshift', Run: `ibmcloud ks versions` to see available versions)"
 }
 
 variable "ibmcloud_api_key" {
