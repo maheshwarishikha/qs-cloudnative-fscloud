@@ -45,11 +45,13 @@ variable "ibmcloud_api_key" {
 }
 
 variable "sm_name" {
+  type        = string
   description = "Name of the Secrets Manager tool integration (Ex. my-secrets-manager)"
   default     = "bank-secrets"
 }
 
 variable "sm_service_name" {
+  type        = string
   description = "Name of the Secrets Manager service. NOTE: Only 1 Secrets Manager instance is allowed. If you already have a Secrets Manager service provisioned, please override this value to its name."
   default     = "bank-secrets-manager"
 }
@@ -57,4 +59,27 @@ variable "sm_service_name" {
 variable "gitlab_token" {
   type        = string
   description = "A GitLab Personal Access Token (Ex. https://us-south.git.cloud.ibm.com/-/profile/personal_access_tokens NOTE: Make sure to create your token in the same region as your toolchain, or 'region' variable.)"
+}
+
+variable "scc_name" {
+  type        = string
+  description = "Name for the Security and Compliance Center (SCC) integration tool"
+  default     = "bank-scc"
+}
+
+variable "scc_trigger" {
+  type        = string
+  description = "Setting to trigger validation scan after deploy (options: 'enabled' or 'disabled')"
+  default     = "enabled"
+}
+
+variable "scc_profile" {
+  type        = string
+  description = "Name of an existing SCC Profile"
+  default     = "IBM Cloud Best Practices Controls 1.0"
+}
+
+variable "scc_scope" {
+  type        = string
+  description = "Name of an existing SCC Scope (See instructions on creating a scope here: https://cloud.ibm.com/docs/security-compliance?topic=security-compliance-scopes"
 }

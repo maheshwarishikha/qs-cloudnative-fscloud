@@ -64,10 +64,8 @@ resource "ibm_iam_service_api_key" "cos_service_api_key" {
 resource "ibm_iam_service_policy" "cos_policy" {
   iam_service_id = ibm_iam_service_id.cos_serviceID.id
   roles          = ["Reader", "Writer"]
-
   resources {
-    service              = "cloud-object-storage"
-    resource_instance_id = ibm_resource_instance.cos_instance.id
+    service      = "cloud-object-storage"
   }
 }
 
@@ -95,7 +93,7 @@ resource "null_resource" "create_kubernetes_toolchain" {
       REGION                  = var.region
       CI_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-ci-toolchain"
       CD_TOOLCHAIN_REPO       = "https://${var.region}.git.cloud.ibm.com/open-toolchain/compliance-cd-toolchain"
-      APPLICATION_REPO        = "https://github.com/ChuckCox/example-bank-toolchain"
+      APPLICATION_REPO        = "https://github.com/IBM/example-bank-toolchain"
       RESOURCE_GROUP          = var.resource_group
       API_KEY                 = var.ibmcloud_api_key
       CLUSTER_NAME            = ibm_container_vpc_cluster.cluster.name
@@ -104,15 +102,19 @@ resource "null_resource" "create_kubernetes_toolchain" {
       CI_TOOLCHAIN_NAME       = "bank-ci-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
       CD_TOOLCHAIN_NAME       = "bank-cd-toolchain-${formatdate("YYYYMMDDhhmm", timestamp())}"
       PIPELINE_TYPE           = "tekton"
-      PIPELINE_CONFIG_BRANCH  = "main"
+      PIPELINE_CONFIG_BRANCH  = "devops-template"
       BRANCH                  = "master"
       APP_NAME                = "bank-app-${formatdate("YYYYMMDDhhmm", timestamp())}"
       COS_BUCKET_NAME         = ibm_cos_bucket.cos_bucket.bucket_name
-      COS_URL                 = "s3.private.${var.region}.cloud-object-storage.appdomain.cloud"
+      COS_URL                 = "s3.${var.region}.cloud-object-storage.appdomain.cloud"
       COS_API_KEY             = ibm_iam_service_api_key.cos_service_api_key.apikey
       SM_NAME                 = var.sm_name
       SM_SERVICE_NAME         = var.sm_service_name
       GITLAB_TOKEN            = var.gitlab_token
+      SCC_NAME                = var.scc_name
+      SCC_TRIGGER             = var.scc_trigger
+      SCC_PROFILE             = var.scc_profile
+      SCC_SCOPE               = var.scc_scope
     }
   }
 }
