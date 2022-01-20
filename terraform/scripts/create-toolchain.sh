@@ -436,7 +436,7 @@ echo "Gathering data from the CI Toolchain..."
 RESPONSE=$(curl -s \
   -H 'Accept: application/json' \
   -H "Authorization: $BEARER_TOKEN" \
-  "${LOCATION%$'\r'}?include=services,unconfigured")
+  "$LOCATION")
 
 # parse the json to obtain the evidence, inventory, and issues repo URLs
 SERVICES=$(echo $RESPONSE | jq -r '.services | length')
