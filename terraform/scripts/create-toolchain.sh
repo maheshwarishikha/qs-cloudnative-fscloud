@@ -238,7 +238,7 @@ oc apply -f scripts/sub.yaml
 
 echo "Waiting for PostgreSQL Operator to be created..."
 sleep 30
-WAIT=300
+WAIT=420
 COUNTER=0
 while [ $COUNTER -lt $WAIT ]; do
   OG_STATUS=$(oc get pods | grep postgresql-operator | awk {'print $3'})
@@ -249,7 +249,7 @@ while [ $COUNTER -lt $WAIT ]; do
     COUNTER=$((COUNTER+30))
     echo "OG Status: $OG_STATUS"
     if [[ $COUNTER == $WAIT ]];then
-      echo "Operator took longer than 5 minutes to create. This could be a problem."
+      echo "Operator took longer than 7 minutes to create. This could be a problem."
       break
     fi
     echo "Trying again in 30 seconds..."
@@ -263,7 +263,7 @@ oc apply -f scripts/db.yaml
 
 echo "Waiting for PostgreSQL database to be created..."
 sleep 30
-WAIT=300
+WAIT=420
 COUNTER=0
 while [ $COUNTER -lt $WAIT ]; do
   DB_STATUS=$(oc get pods | grep creditdb | awk {'print $3'})
@@ -274,7 +274,7 @@ while [ $COUNTER -lt $WAIT ]; do
     COUNTER=$((COUNTER+30))
     echo "DB Status: $DB_STATUS"
     if [[ $COUNTER == $WAIT ]];then
-      echo "DB took longer than 4 minutes to create. This could be a problem."
+      echo "DB took longer than 7 minutes to create. This could be a problem."
       break
     fi
     echo "Trying again in 30 seconds..."
@@ -436,7 +436,7 @@ echo "Gathering data from the CI Toolchain..."
 RESPONSE=$(curl -s \
   -H 'Accept: application/json' \
   -H "Authorization: $BEARER_TOKEN" \
-  "$LOCATION")
+  "${LOCATION%$'\r'}?include=services,unconfigured")
 
 # parse the json to obtain the evidence, inventory, and issues repo URLs
 SERVICES=$(echo $RESPONSE | jq -r '.services | length')
